@@ -1,0 +1,32 @@
+{
+  "name": "zeroheight-pr-audit",
+  "version": "1.0.0",
+  "description": "Audit pull request UI changes against your design system guidelines in zeroheight, through the zeroheight MCP. Runs on GitHub, GitLab and Bitbucket with Anthropic, OpenAI or GitHub Copilot.",
+  "type": "module",
+  "bin": {
+    "zeroheight-pr-audit": "bin/zeroheight-pr-audit.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "prompts"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zeroheight/zeroheight-pr-audit.git"
+  },
+  "keywords": [
+    "zeroheight",
+    "design-system",
+    "mcp",
+    "code-review",
+    "pull-request"
+  ]
+}

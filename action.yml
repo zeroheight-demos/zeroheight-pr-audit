@@ -1,0 +1,59 @@
+name: zeroheight design system audit
+description: Audit a pull request's UI changes against your design system guidelines in zeroheight, and comment on the pull request.
+author: zeroheight
+branding:
+  icon: check-square
+  color: green
+
+inputs:
+  provider:
+    description: "Model provider: anthropic, openai or copilot."
+    default: anthropic
+  model:
+    description: "Model ID. Leave empty for the provider's default."
+    default: ""
+  zeroheight-mcp-url:
+    description: "The styleguide's remote MCP link (https://mcp.zeroheight.com/mcp/<key>). Pass it from a secret."
+    required: true
+  anthropic-api-key:
+    description: "Anthropic API key, for provider anthropic."
+    default: ""
+  openai-api-key:
+    description: "OpenAI API key, for provider openai."
+    default: ""
+  copilot-token:
+    description: "Fine-grained PAT with the Copilot Requests permission, for provider copilot."
+    default: ""
+  github-token:
+    description: "Token used to post comments. Needs pull-requests write."
+    default: ${{ github.token }}
+  config:
+    description: "Path to the config file."
+    default: zeroheight-audit.config.json
+  dry-run:
+    description: "Print the report in the job log instead of commenting."
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+
+    - name: Audit against zeroheight
+      shell: bash
+      env:
+        ZH_AUDIT_PROVIDER: ${{ inputs.provider }}
+        ZH_AUDIT_MODEL: ${{ inputs.model }}
+        ZH_AUDIT_CONFIG: ${{ inputs.config }}
+        ZEROHEIGHT_MCP_URL: ${{ inputs.zeroheight-mcp-url }}
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+        OPENAI_API_KEY: ${{ inputs.openai-api-key }}
+        COPILOT_GITHUB_TOKEN: ${{ inputs.copilot-token }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        DRY_RUN: ${{ inputs.dry-run }}
+      run: |
+        args=()
+        if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
+        node "$GITHUB_ACTION_PATH/bin/zeroheight-pr-audit.mjs" "${args[@]}"

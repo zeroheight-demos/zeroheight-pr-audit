@@ -1,0 +1,33 @@
+# Design system audit for GitLab merge requests.
+#
+# Use it from your .gitlab-ci.yml with:
+#
+#   include:
+#     - remote: "https://raw.githubusercontent.com/zeroheight/zeroheight-pr-audit/v1/templates/gitlab/zeroheight-audit.gitlab-ci.yml"
+#
+# or paste this job in directly.
+#
+# CI/CD variables (Settings → CI/CD → Variables), all masked:
+#   ZEROHEIGHT_MCP_URL     The styleguide's remote MCP link
+#   GITLAB_TOKEN           Project access token, role Reporter or above, scope api
+#   ANTHROPIC_API_KEY      or OPENAI_API_KEY, or COPILOT_GITHUB_TOKEN
+#   ZH_AUDIT_PROVIDER      anthropic (default), openai or copilot
+#
+# Leave the variables unprotected, or merge request pipelines from unprotected
+# branches won't see them.
+
+zeroheight-audit:
+  stage: test
+  image: node:22
+  variables:
+    # Full history, so the merge base with the target branch can be found.
+    GIT_DEPTH: 0
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_DRAFT != "true"
+      changes:
+        - src/**/*
+        - zeroheight-audit.config.json
+  interruptible: true
+  timeout: 20m
+  script:
+    - npx --yes github:zeroheight/zeroheight-pr-audit#v1

@@ -1,0 +1,9 @@
+{
+  "styleguideName": "Your Styleguide",
+  "tokenSetId": null,
+  "include": ["src/**/*.{tsx,ts,jsx,js,vue,svelte,css,scss,less}"],
+  "exclude": ["**/*.test.*", "**/*.spec.*", "**/*.stories.*"],
+  "failOn": "none",
+  "maxInlineComments": 25,
+  "extraInstructions": ""
+}

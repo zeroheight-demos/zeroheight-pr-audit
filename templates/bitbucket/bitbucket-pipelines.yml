@@ -1,0 +1,29 @@
+# Design system audit for Bitbucket pull requests. Merge the pull-requests
+# section into your bitbucket-pipelines.yml.
+#
+# Repository variables (Repository settings → Pipelines → Repository variables),
+# all secured:
+#   ZEROHEIGHT_MCP_URL     The styleguide's remote MCP link
+#   BITBUCKET_TOKEN        Repository access token with the Pull requests: Write scope
+#   ANTHROPIC_API_KEY      or OPENAI_API_KEY, or COPILOT_GITHUB_TOKEN
+#   ZH_AUDIT_PROVIDER      anthropic (default), openai or copilot
+
+image: node:22
+
+clone:
+  # Full history, so the merge base with the destination branch can be found.
+  depth: full
+
+pipelines:
+  pull-requests:
+    "**":
+      - step:
+          name: Design system audit
+          max-time: 20
+          condition:
+            changesets:
+              includePaths:
+                - "src/**"
+                - "zeroheight-audit.config.json"
+          script:
+            - npx --yes github:zeroheight/zeroheight-pr-audit#v1

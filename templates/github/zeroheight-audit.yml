@@ -1,0 +1,53 @@
+# Design system audit: comments on each pull request with findings from your
+# zeroheight guidelines. Copy to .github/workflows/zeroheight-audit.yml.
+#
+# Repository secrets (Settings → Secrets and variables → Actions):
+#   ZEROHEIGHT_MCP_URL     The styleguide's remote MCP link. It grants read
+#                          access by itself, so keep it secret.
+#   ANTHROPIC_API_KEY      or OPENAI_API_KEY, or COPILOT_GITHUB_TOKEN (a fine-grained
+#                          PAT with the Copilot Requests permission)
+
+name: Design system audit
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    # Only run when UI code or the audit config changes. Match your include globs.
+    paths:
+      - "src/**"
+      - "zeroheight-audit.config.json"
+
+concurrency:
+  group: zeroheight-audit-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    # Pull requests from forks don't get secrets, and drafts aren't ready yet.
+    if: github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      # Check out the pull request's own commit (not GitHub's merge commit) with
+      # full history, so line numbers match the diff and the base can be found.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - uses: zeroheight/zeroheight-pr-audit@v1
+        with:
+          zeroheight-mcp-url: ${{ secrets.ZEROHEIGHT_MCP_URL }}
+
+          # Pick one provider and keep its key line.
+          provider: anthropic
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+
+          # provider: openai
+          # openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+
+          # provider: copilot
+          # copilot-token: ${{ secrets.COPILOT_GITHUB_TOKEN }}
