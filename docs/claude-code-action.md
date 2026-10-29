@@ -63,4 +63,4 @@ jobs:
   request. Skill changes only take effect once merged.
 - **A green check doesn't prove the audit ran.** Add a step before the action
   that calls the MCP link with `curl` and fails if it doesn't return a
-  `styleguideName`, or a broken link passes silently.
+  `styleguideName`, or a broken link still passes green.
