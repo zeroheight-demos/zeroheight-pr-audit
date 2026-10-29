@@ -1,5 +1,5 @@
 import { request } from "../http.mjs";
-import { anchorKey, markerKey, renderInline, SUMMARY_MARKER } from "../report.mjs";
+import { alreadyPosted, existingComment, renderInline, SUMMARY_MARKER } from "../report.mjs";
 
 export function context(env = process.env) {
 	if (!env.BITBUCKET_PR_ID) {
@@ -45,13 +45,11 @@ export async function publish({ ctx, report, summary, log, env = process.env }) 
 	const { call, all } = client(env);
 
 	const comments = (await all("/comments")).filter((c) => !c.deleted);
-	const existing = new Set(
-		comments.filter((c) => markerKey(c.content?.raw) && c.inline?.to).map((c) => anchorKey(c.inline.path, c.inline.to)),
-	);
+	const existing = comments.map((c) => existingComment({ path: c.inline?.path, end: c.inline?.to, body: c.content?.raw }));
 	const inline = report.findings.filter((f) => f.inline);
 	let posted = 0;
 	for (const f of inline) {
-		if (existing.has(anchorKey(f.file, f.line))) continue;
+		if (alreadyPosted(f, existing)) continue;
 		try {
 			// Bitbucket has no suggestion blocks, so the fix is shown as a code block.
 			await call("/comments", { method: "POST", body: { content: { raw: renderInline(f, "none") }, inline: { path: f.file, to: f.line } } });

@@ -9,10 +9,38 @@ export const SEVERITIES = {
 // Hidden in rendered Markdown on GitHub, GitLab and Bitbucket alike.
 export const SUMMARY_MARKER = "[//]: # (zeroheight-pr-audit:summary)";
 export const inlineMarker = (key) => `[//]: # (zeroheight-pr-audit:${key})`;
-// Re-runs word findings differently, so an existing audit comment is matched on
-// where it sits, not on what it says.
-export const anchorKey = (path, line) => `${path}:${line}`;
-export const anchorLine = (f) => f.endLine || f.line;
+const subjectOf = (title) => String(title || "").split(":")[0].trim().toLowerCase();
+
+/**
+ * Reads an inline comment this tool posted earlier back into what it covers.
+ * Returns null for anyone else's comment.
+ */
+export function existingComment({ path, start, end, body }) {
+	if (!markerKey(body) || !path || !end) return null;
+	const heading = /^\*\*(Must fix|Should fix|Consider) · (.+?)\*\*/.exec(body || "");
+	return { path, start: start || end, end, label: heading?.[1] ?? null, subject: subjectOf(heading?.[2]) };
+}
+
+/**
+ * Re-runs word findings differently and can pin them a line or two apart, so
+ * a finding counts as already posted when an earlier comment sits on the same
+ * file, overlaps its lines, and has the same severity and subject (the part of
+ * the title before the colon). Different problems on overlapping lines, like a
+ * Banner finding around a Button finding, stay separate.
+ */
+export function alreadyPosted(f, existing) {
+	const start = f.line;
+	const end = f.endLine || f.line;
+	return existing.some(
+		(e) =>
+			e &&
+			e.path === f.file &&
+			e.start <= end &&
+			start <= e.end &&
+			e.label === SEVERITIES[f.severity].label &&
+			e.subject === subjectOf(f.title),
+	);
+}
 export const markerKey = (body) => /\[\/\/\]: # \(zeroheight-pr-audit:([^)]+)\)/.exec(body || "")?.[1] ?? null;
 
 /** Pulls the JSON object out of a model reply, tolerating a code fence or stray prose. */

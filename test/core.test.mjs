@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { globToRegExp, makeFileFilter } from "../src/config.mjs";
 import { parseDiff } from "../src/diff.mjs";
-import { exitCodeFor, extractJson, markerKey, normaliseReport, renderInline, renderSummary, SUMMARY_MARKER } from "../src/report.mjs";
+import { alreadyPosted, existingComment, exitCodeFor, extractJson, inlineMarker, markerKey, normaliseReport, renderInline, renderSummary, SUMMARY_MARKER } from "../src/report.mjs";
 
 const DIFF = `diff --git a/src/pages/Referral.tsx b/src/pages/Referral.tsx
 new file mode 100644
@@ -112,4 +112,16 @@ test("rendering: suggestion styles, hidden markers, summary details", () => {
 	assert.match(summary, /\| Must fix \| 1 \|/);
 	assert.match(summary, /Details for findings without an inline comment/);
 	assert.match(summary, /3 pages read · Anthropic/);
+});
+
+test("alreadyPosted: same subject and severity on overlapping lines, nothing else", () => {
+	const prev = (title, start, end, label = "Must fix") =>
+		existingComment({ path: "a.tsx", start, end, body: `**${label} · ${title}**\n\nx\n\n${inlineMarker("k")}` });
+	const existing = [prev("Button: two primaries", 105, 109), prev("Banner: hand-built strip", 75, 86)];
+	const f = (title, line, endLine = null, severity = "must") => ({ file: "a.tsx", title, line, endLine, severity });
+	assert.ok(alreadyPosted(f("Button: two Primary buttons on one surface", 107), existing), "reworded, pinned inside the old range");
+	assert.ok(!alreadyPosted(f("Button: icon-only button has no name", 79, 85), existing), "different subject inside the Banner range");
+	assert.ok(!alreadyPosted(f("Button: two primaries", 107, null, "should"), existing), "different severity");
+	assert.ok(!alreadyPosted(f("Button: two primaries", 120), existing), "no overlap");
+	assert.equal(existingComment({ path: "a.tsx", end: 3, body: "someone else's comment" }), null);
 });

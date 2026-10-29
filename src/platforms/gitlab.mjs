@@ -1,5 +1,5 @@
 import { request } from "../http.mjs";
-import { anchorKey, markerKey, renderInline, SUMMARY_MARKER } from "../report.mjs";
+import { alreadyPosted, existingComment, renderInline, SUMMARY_MARKER } from "../report.mjs";
 
 export function context(env = process.env) {
 	if (!env.CI_MERGE_REQUEST_IID) {
@@ -39,15 +39,12 @@ export async function publish({ ctx, report, summary, files, log, env = process.
 	const refs = mr.diff_refs;
 	const inline = report.findings.filter((f) => f.inline);
 	const discussions = await all("/discussions");
-	const existing = new Set(
-		discussions
-			.flatMap((d) => d.notes || [])
-			.filter((n) => markerKey(n.body) && n.position?.new_line)
-			.map((n) => anchorKey(n.position.new_path, n.position.new_line)),
-	);
+	const existing = discussions
+		.flatMap((d) => d.notes || [])
+		.map((n) => existingComment({ path: n.position?.new_path, end: n.position?.new_line, body: n.body }));
 	let posted = 0;
 	for (const f of inline) {
-		if (existing.has(anchorKey(f.file, f.line))) continue;
+		if (alreadyPosted(f, existing)) continue;
 		const file = byPath.get(f.file);
 		const position = {
 			position_type: "text",

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { request } from "../http.mjs";
-import { anchorKey, anchorLine, markerKey, renderInline, SUMMARY_MARKER } from "../report.mjs";
+import { alreadyPosted, existingComment, renderInline, SUMMARY_MARKER } from "../report.mjs";
 
 export function context(env = process.env) {
 	if (!env.GITHUB_EVENT_PATH) throw new Error("GITHUB_EVENT_PATH isn't set: this doesn't look like a GitHub Actions run.");
@@ -38,12 +38,12 @@ export async function publish({ ctx, report, summary, files, log, env = process.
 	const { call, all } = client(env);
 
 	const inline = report.findings.filter((f) => f.inline);
-	const existing = new Set(
-		(await all(`/pulls/${ctx.number}/comments`)).filter((c) => markerKey(c.body) && c.line).map((c) => anchorKey(c.path, c.line)),
+	const existing = (await all(`/pulls/${ctx.number}/comments`)).map((c) =>
+		existingComment({ path: c.path, start: c.start_line, end: c.line, body: c.body }),
 	);
 	let posted = 0;
 	for (const f of inline) {
-		if (existing.has(anchorKey(f.file, anchorLine(f)))) continue;
+		if (alreadyPosted(f, existing)) continue;
 		const body = {
 			body: renderInline(f, "github"),
 			commit_id: ctx.headSha,

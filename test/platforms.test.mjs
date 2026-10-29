@@ -48,7 +48,7 @@ const run = (platform, ctx, env) => {
 test("github: multi-line comment payload, skips existing, updates summary", async () => {
 	const calls = mockFetch([
 		// Same place as the second finding, worded differently by an earlier run.
-		{ method: "GET", url: /\/pulls\/7\/comments/, data: [{ path: "src/App.tsx", line: 13, body: `Older wording\n\n${inlineMarker("0ld")}` }] },
+		{ method: "GET", url: /\/pulls\/7\/comments/, data: [{ path: "src/App.tsx", line: 13, body: `**Should fix · Context line: older wording**\n\nx\n\n${inlineMarker("0ld")}` }] },
 		{ method: "GET", url: /\/issues\/7\/comments/, data: [{ id: 99, body: `${SUMMARY_MARKER}\n\nold` }] },
 	]);
 	await run(github, { number: 7, headSha: "abc" }, { GITHUB_TOKEN: "t", GITHUB_REPOSITORY: "o/r" });
