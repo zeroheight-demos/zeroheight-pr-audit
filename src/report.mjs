@@ -9,6 +9,10 @@ export const SEVERITIES = {
 // Hidden in rendered Markdown on GitHub, GitLab and Bitbucket alike.
 export const SUMMARY_MARKER = "[//]: # (zeroheight-pr-audit:summary)";
 export const inlineMarker = (key) => `[//]: # (zeroheight-pr-audit:${key})`;
+// Re-runs word findings differently, so an existing audit comment is matched on
+// where it sits, not on what it says.
+export const anchorKey = (path, line) => `${path}:${line}`;
+export const anchorLine = (f) => f.endLine || f.line;
 export const markerKey = (body) => /\[\/\/\]: # \(zeroheight-pr-audit:([^)]+)\)/.exec(body || "")?.[1] ?? null;
 
 /** Pulls the JSON object out of a model reply, tolerating a code fence or stray prose. */

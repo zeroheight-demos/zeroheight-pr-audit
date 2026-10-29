@@ -47,9 +47,11 @@ from the pull request's.
 
 ### Comments repeat on every push
 
-Each inline comment carries a hidden marker, and a finding with the same file,
-severity and title isn't posted again. If the model words a title differently
-on a re-run, you can get a near-duplicate. Resolve the old thread.
+They shouldn't. The audit only posts an inline comment where it hasn't already
+left one on the same file and line, however the model words the finding this
+time. You can still get a second comment when a later run groups things
+differently (pins a finding to a different line), and the summary always shows
+the latest run. Resolve threads as you fix them.
 
 ### Rate limits
 
