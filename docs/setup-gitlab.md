@@ -43,7 +43,7 @@ Include the template from your `.gitlab-ci.yml`:
 
 ```yaml
 include:
-  - remote: "https://raw.githubusercontent.com/zeroheight/zeroheight-pr-audit/v1/templates/gitlab/zeroheight-audit.gitlab-ci.yml"
+  - remote: "https://raw.githubusercontent.com/zeroheight-demos/zeroheight-pr-audit/v1/templates/gitlab/zeroheight-audit.gitlab-ci.yml"
 ```
 
 Or copy the job from

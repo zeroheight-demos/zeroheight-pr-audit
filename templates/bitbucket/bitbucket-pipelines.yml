@@ -26,4 +26,4 @@ pipelines:
                 - "src/**"
                 - "zeroheight-audit.config.json"
           script:
-            - npx --yes github:zeroheight/zeroheight-pr-audit#v1
+            - npx --yes github:zeroheight-demos/zeroheight-pr-audit#v1

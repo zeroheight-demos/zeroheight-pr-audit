@@ -3,7 +3,7 @@
 # Use it from your .gitlab-ci.yml with:
 #
 #   include:
-#     - remote: "https://raw.githubusercontent.com/zeroheight/zeroheight-pr-audit/v1/templates/gitlab/zeroheight-audit.gitlab-ci.yml"
+#     - remote: "https://raw.githubusercontent.com/zeroheight-demos/zeroheight-pr-audit/v1/templates/gitlab/zeroheight-audit.gitlab-ci.yml"
 #
 # or paste this job in directly.
 #
@@ -30,4 +30,4 @@ zeroheight-audit:
   interruptible: true
   timeout: 20m
   script:
-    - npx --yes github:zeroheight/zeroheight-pr-audit#v1
+    - npx --yes github:zeroheight-demos/zeroheight-pr-audit#v1

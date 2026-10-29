@@ -48,7 +48,7 @@ tool call (`zeroheight: get-page`, and so on) and the finding counts.
 
 ## Options
 
-Inputs for `zeroheight/zeroheight-pr-audit@v1`:
+Inputs for `zeroheight-demos/zeroheight-pr-audit@v1`:
 
 | Input | Default | |
 |---|---|---|

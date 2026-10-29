@@ -10,7 +10,7 @@ guidelines your team has documented in zeroheight. Every finding points to the
 zeroheight page that says so.
 
 This is the local twin of the CI audit in
-[zeroheight-pr-audit](https://github.com/zeroheight/zeroheight-pr-audit): same
+[zeroheight-pr-audit](https://github.com/zeroheight-demos/zeroheight-pr-audit): same
 rules, same severities, run in your editor before you open the pull request.
 
 ## What you need

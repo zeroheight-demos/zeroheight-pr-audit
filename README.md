@@ -75,7 +75,7 @@ to audit ([configuration](docs/configuration.md)).
 Same audit, printed in your terminal instead of posted:
 
 ```bash
-ZEROHEIGHT_MCP_URL=... ANTHROPIC_API_KEY=... npx --yes github:zeroheight/zeroheight-pr-audit#v1 --base main
+ZEROHEIGHT_MCP_URL=... ANTHROPIC_API_KEY=... npx --yes github:zeroheight-demos/zeroheight-pr-audit#v1 --base main
 ```
 
 Or install the [Claude Code skill](skill/zeroheight-pr-audit/SKILL.md) and ask

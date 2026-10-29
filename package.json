@@ -20,7 +20,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zeroheight/zeroheight-pr-audit.git"
+    "url": "git+https://github.com/zeroheight-demos/zeroheight-pr-audit.git"
   },
   "keywords": [
     "zeroheight",
