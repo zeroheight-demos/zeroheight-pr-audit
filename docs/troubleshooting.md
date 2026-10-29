@@ -47,13 +47,15 @@ from the pull request's.
 
 ### Comments repeat on every push
 
-They shouldn't. Before posting, the audit checks its own earlier comments and
-skips a finding when one already sits on overlapping lines in the same file
-with the same severity and subject (the part of the title before the colon,
-like "Button"). That catches the usual re-run drift, where the model rewords a
-title or pins it a line or two away. A finding that changes severity between
-runs, or that a later run groups differently, can still get a second comment.
-The summary always reflects the latest run.
+Mostly not. Before posting, the audit checks its own earlier comments and
+skips a finding when one in the same file starts or ends on the same line, or
+overlaps it with the same severity and subject (the part of the title before
+the colon, like "Button"). That covers the usual re-run drift, where the model
+rewords a title, shifts a severity or pins a finding a line or two away.
+
+A later run can still split or regroup findings (one comment per missing token
+instead of one for all of them, say), and those get new comments. The summary
+always reflects the latest run.
 
 ### Rate limits
 

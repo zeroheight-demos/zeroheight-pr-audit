@@ -22,11 +22,12 @@ export function existingComment({ path, start, end, body }) {
 }
 
 /**
- * Re-runs word findings differently and can pin them a line or two apart, so
- * a finding counts as already posted when an earlier comment sits on the same
- * file, overlaps its lines, and has the same severity and subject (the part of
- * the title before the colon). Different problems on overlapping lines, like a
- * Banner finding around a Button finding, stay separate.
+ * Re-runs reword findings, shift their severity and pin them a line or two
+ * apart, so a finding counts as already posted when an earlier comment in the
+ * same file either starts or ends on the same line, or overlaps it with the
+ * same severity and subject (the part of the title before the colon).
+ * Different problems on overlapping lines, like a Banner finding around a
+ * Button finding, stay separate.
  */
 export function alreadyPosted(f, existing) {
 	const start = f.line;
@@ -35,10 +36,9 @@ export function alreadyPosted(f, existing) {
 		(e) =>
 			e &&
 			e.path === f.file &&
-			e.start <= end &&
-			start <= e.end &&
-			e.label === SEVERITIES[f.severity].label &&
-			e.subject === subjectOf(f.title),
+			(e.start === start ||
+				e.end === end ||
+				(e.start <= end && start <= e.end && e.label === SEVERITIES[f.severity].label && e.subject === subjectOf(f.title))),
 	);
 }
 export const markerKey = (body) => /\[\/\/\]: # \(zeroheight-pr-audit:([^)]+)\)/.exec(body || "")?.[1] ?? null;

@@ -121,7 +121,9 @@ test("alreadyPosted: same subject and severity on overlapping lines, nothing els
 	const f = (title, line, endLine = null, severity = "must") => ({ file: "a.tsx", title, line, endLine, severity });
 	assert.ok(alreadyPosted(f("Button: two Primary buttons on one surface", 107), existing), "reworded, pinned inside the old range");
 	assert.ok(!alreadyPosted(f("Button: icon-only button has no name", 79, 85), existing), "different subject inside the Banner range");
-	assert.ok(!alreadyPosted(f("Button: two primaries", 107, null, "should"), existing), "different severity");
+	assert.ok(!alreadyPosted(f("Button: two primaries", 107, null, "should"), existing), "different severity inside the range");
+	assert.ok(alreadyPosted(f("Button used for navigation", 105, 109, "should"), existing), "same range, whatever the wording or severity");
+	assert.ok(alreadyPosted(f("Hardcoded values", 75, 80, "should"), existing), "same start line");
 	assert.ok(!alreadyPosted(f("Button: two primaries", 120), existing), "no overlap");
 	assert.equal(existingComment({ path: "a.tsx", end: 3, body: "someone else's comment" }), null);
 });
