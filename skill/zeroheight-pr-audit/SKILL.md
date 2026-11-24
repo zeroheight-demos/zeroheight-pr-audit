@@ -15,21 +15,21 @@ rules, same severities, run in your editor before you open the pull request.
 
 ## What you need
 
-- **The zeroheight MCP**, read access is enough. Either the styleguide's
-  remote MCP link (`https://mcp.zeroheight.com/mcp/<key>`) or the main server
-  (`https://mcp.zeroheight.com/mcp`) connected by login.
+- **The zeroheight MCP** (`https://mcp.zeroheight.com/mcp`), connected by
+  login. Read access is enough. Signed in through the browser, it includes the
+  token tools; with an API token in headers, it has pages only, so skip token
+  matching and say so.
 - **`zeroheight-audit.config.json`** at the repo root, if the team has one. It
   sets `styleguideName`, `tokenSetId`, the `include`/`exclude` globs, and
   `extraInstructions` for anything team-specific.
 
-Picking the styleguide: with a remote MCP link there's nothing to pick (the
-link decides, and `list-pages` returns its name). With the main server, call
-`list-styleguides` and use the one matching `styleguideName`; with no config
-and several styleguides, ask. For the token set, use `tokenSetId`, or call
+Picking the styleguide: call `list-styleguides` and use the one matching
+`styleguideId` or `styleguideName`; with no config and several styleguides,
+ask. For the token set, use `tokenSetId`, or call
 `list-token-sets` and use the only set that has tokens, or ask.
 
-Page IDs differ between the remote link and the main server, so always get IDs
-from `list-pages` or `search-pages` in the same session.
+Always get page IDs from `list-pages` or `search-pages` in the same session;
+don't reuse IDs from anywhere else.
 
 ## Hard rules
 

@@ -2,10 +2,19 @@
 
 For Bitbucket Cloud with Pipelines.
 
-## 1. Turn on the remote MCP link in zeroheight
+## 1. Create a zeroheight API token
 
-In the styleguide's settings, turn on **MCP via remote link** and copy the link
-(`https://mcp.zeroheight.com/mcp/<key>`).
+In zeroheight, go to your organization's (or workspace's) settings →
+**Developers** and create an authentication token:
+
+- **Name:** something like "PR audit"
+- **Scopes:** only `page:read` and `token_set:read` (granular scopes are on
+  the Enterprise plan). That's all the audit needs, and it means the token
+  can't change anything.
+
+Copy the **Client ID** and **Access Token**. The access token is only shown
+once. The token acts as the person who created it, so they need to be able to
+see the styleguide and token set you'll audit against.
 
 ## 2. Create a repository access token
 
@@ -24,7 +33,8 @@ for every secret.
 
 | Name | Value |
 |---|---|
-| `ZEROHEIGHT_MCP_URL` | The link from step 1 |
+| `ZEROHEIGHT_CLIENT_ID` | The Client ID from step 1 |
+| `ZEROHEIGHT_ACCESS_TOKEN` | The Access Token from step 1 |
 | `BITBUCKET_TOKEN` | The token from step 2 |
 | `ZH_AUDIT_PROVIDER` | `anthropic`, `openai` or `copilot` |
 | `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `COPILOT_GITHUB_TOKEN` | The key for your provider |
@@ -61,5 +71,5 @@ inline comment per finding.
 - **Forks.** Secured variables aren't available to pull requests from forks.
 - **Build minutes.** A run usually takes two to five minutes, most of it the
   model reading your zeroheight pages.
-- **Pinning.** `#v1` follows the latest 1.x release. Pin to a tag like `#v1.0.0`
+- **Pinning.** `#v2` follows the latest 2.x release. Pin to a tag like `#v2.0.0`
   or a commit SHA if you want changes only when you choose.

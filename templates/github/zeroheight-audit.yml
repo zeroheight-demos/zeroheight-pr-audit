@@ -2,8 +2,8 @@
 # zeroheight guidelines. Copy to .github/workflows/zeroheight-audit.yml.
 #
 # Repository secrets (Settings → Secrets and variables → Actions):
-#   ZEROHEIGHT_MCP_URL     The styleguide's remote MCP link. It grants read
-#                          access by itself, so keep it secret.
+#   ZEROHEIGHT_CLIENT_ID      A zeroheight API token (Settings → API tokens) with the
+#   ZEROHEIGHT_ACCESS_TOKEN   page:read and token_set:read scopes. Keep both secret.
 #   ANTHROPIC_API_KEY      or OPENAI_API_KEY, or COPILOT_GITHUB_TOKEN (a fine-grained
 #                          PAT with the Copilot Requests permission)
 
@@ -38,9 +38,10 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - uses: zeroheight-demos/zeroheight-pr-audit@v1
+      - uses: zeroheight-demos/zeroheight-pr-audit@v2
         with:
-          zeroheight-mcp-url: ${{ secrets.ZEROHEIGHT_MCP_URL }}
+          zeroheight-client-id: ${{ secrets.ZEROHEIGHT_CLIENT_ID }}
+          zeroheight-access-token: ${{ secrets.ZEROHEIGHT_ACCESS_TOKEN }}
 
           # Pick one provider and keep its key line.
           provider: anthropic

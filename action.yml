@@ -12,8 +12,11 @@ inputs:
   model:
     description: "Model ID. Leave empty for the provider's default."
     default: ""
-  zeroheight-mcp-url:
-    description: "The styleguide's remote MCP link (https://mcp.zeroheight.com/mcp/<key>). Pass it from a secret."
+  zeroheight-client-id:
+    description: "Client ID of a zeroheight API token with the page:read and token_set:read scopes. Pass it from a secret."
+    required: true
+  zeroheight-access-token:
+    description: "Access token of the same zeroheight API token. Pass it from a secret."
     required: true
   anthropic-api-key:
     description: "Anthropic API key, for provider anthropic."
@@ -47,7 +50,8 @@ runs:
         ZH_AUDIT_PROVIDER: ${{ inputs.provider }}
         ZH_AUDIT_MODEL: ${{ inputs.model }}
         ZH_AUDIT_CONFIG: ${{ inputs.config }}
-        ZEROHEIGHT_MCP_URL: ${{ inputs.zeroheight-mcp-url }}
+        ZEROHEIGHT_CLIENT_ID: ${{ inputs.zeroheight-client-id }}
+        ZEROHEIGHT_ACCESS_TOKEN: ${{ inputs.zeroheight-access-token }}
         ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
         OPENAI_API_KEY: ${{ inputs.openai-api-key }}
         COPILOT_GITHUB_TOKEN: ${{ inputs.copilot-token }}

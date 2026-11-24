@@ -1,10 +1,9 @@
 import { parseArgs } from "node:util";
 import { loadConfig, makeFileFilter } from "./config.mjs";
 import { buildAuditInput, getDiff, parseDiff, resolveBase } from "./diff.mjs";
-import { redact } from "./http.mjs";
-import { checkZeroheight } from "./mcp.mjs";
 import { systemPrompt, userPrompt } from "./prompt.mjs";
 import { counts, exitCodeFor, extractJson, normaliseReport, renderInline, renderSummary } from "./report.mjs";
+import { connect, credentials } from "./zeroheight.mjs";
 
 const PROVIDERS = {
 	anthropic: { load: () => import("./providers/anthropic.mjs"), key: "ANTHROPIC_API_KEY", label: "Anthropic" },
@@ -32,7 +31,8 @@ Options:
   -h, --help           Show this help
 
 Environment:
-  ZEROHEIGHT_MCP_URL   The styleguide's remote MCP link (required)
+  ZEROHEIGHT_CLIENT_ID, ZEROHEIGHT_ACCESS_TOKEN   A zeroheight API token with the
+                       page:read and token_set:read scopes (required)
   ANTHROPIC_API_KEY | OPENAI_API_KEY | COPILOT_GITHUB_TOKEN   For the chosen provider
   GITHUB_TOKEN | GITLAB_TOKEN | BITBUCKET_TOKEN               For posting comments
 `;
@@ -71,8 +71,7 @@ export async function main(argv, env = process.env) {
 	const dryRun = values["dry-run"] || platformName === "local";
 	const model = values.model || env.ZH_AUDIT_MODEL || undefined;
 
-	const mcpUrl = env.ZEROHEIGHT_MCP_URL;
-	if (!mcpUrl) throw new Error("ZEROHEIGHT_MCP_URL isn't set. Add the styleguide's remote MCP link as a CI secret.");
+	credentials(env); // fail fast if the zeroheight API token is missing
 	const apiKey = env[provider.key];
 	if (!apiKey) throw new Error(`${provider.key} isn't set, and the ${provider.label} provider needs it.`);
 
@@ -96,22 +95,30 @@ export async function main(argv, env = process.env) {
 	log(`Auditing ${files.length} file${files.length === 1 ? "" : "s"}: ${files.map((f) => f.path).join(", ")}`);
 
 	// 2. zeroheight is the source of truth, so stop if it can't be reached.
-	const styleguideName = await checkZeroheight(mcpUrl);
-	log(`zeroheight access OK: ${styleguideName} (${redact(mcpUrl)})`);
-	if (config.styleguideName && config.styleguideName !== styleguideName) {
-		log(`warning: the config names "${config.styleguideName}" but the MCP link serves "${styleguideName}". Auditing against "${styleguideName}".`);
-	}
+	const zh = await connect({ env, config, log });
+	const styleguideName = zh.styleguide.name;
+	log(`zeroheight access OK: ${styleguideName} (${zh.styleguide.id}) · tools: ${zh.tools.map((t) => t.name).join(", ")}`);
+	if (zh.tokens) log(`Tokens: ${zh.tokens.size} from ${zh.tokens.setName}`);
+	else log(`Tokens: not checked (${zh.tokenNote})`);
 
 	// 3. Run the audit.
 	const input = buildAuditInput(files, config);
+	const added = input.patch
+		.split("\n")
+		.filter((l) => l.startsWith("+") && !l.startsWith("+++"))
+		.join("\n");
+	const references = zh.checkReferences(added);
+	const unmatched = references.filter((r) => !r.token && !r.definedIn.length);
+	if (references.length) log(`Token references: ${references.length} checked, ${unmatched.length} not found in zeroheight or this repo`);
 	const impl = await provider.load();
 	const result = await impl.run({
 		system: systemPrompt(),
-		user: userPrompt({ styleguideName, config, pr: ctx, input }),
-		mcpUrl,
+		user: userPrompt({ zh, config, pr: ctx, input, references }),
 		model,
 		apiKey,
 		log,
+		zh,
+		env,
 	});
 	if (result.toolCalls && !result.toolCalls.length) {
 		throw new Error("The model didn't call any zeroheight tools, so the audit isn't grounded in your docs. Not posting.");

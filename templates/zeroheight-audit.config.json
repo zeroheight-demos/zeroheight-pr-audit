@@ -1,4 +1,5 @@
 {
+  "styleguideId": null,
   "styleguideName": "Your Styleguide",
   "tokenSetId": null,
   "include": ["src/**/*.{tsx,ts,jsx,js,vue,svelte,css,scss,less}"],

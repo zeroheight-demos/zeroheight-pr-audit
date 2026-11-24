@@ -1,9 +1,18 @@
 # Set up on GitHub
 
-## 1. Turn on the remote MCP link in zeroheight
+## 1. Create a zeroheight API token
 
-In the styleguide's settings, turn on **MCP via remote link** and copy the link
-(`https://mcp.zeroheight.com/mcp/<key>`).
+In zeroheight, go to your organization's (or workspace's) settings →
+**Developers** and create an authentication token:
+
+- **Name:** something like "PR audit"
+- **Scopes:** only `page:read` and `token_set:read` (granular scopes are on
+  the Enterprise plan). That's all the audit needs, and it means the token
+  can't change anything.
+
+Copy the **Client ID** and **Access Token**. The access token is only shown
+once. The token acts as the person who created it, so they need to be able to
+see the styleguide and token set you'll audit against.
 
 ## 2. Add repository secrets
 
@@ -11,7 +20,8 @@ In the styleguide's settings, turn on **MCP via remote link** and copy the link
 
 | Secret | Value |
 |---|---|
-| `ZEROHEIGHT_MCP_URL` | The link from step 1 |
+| `ZEROHEIGHT_CLIENT_ID` | The Client ID from step 1 |
+| `ZEROHEIGHT_ACCESS_TOKEN` | The Access Token from step 1 |
 | `ANTHROPIC_API_KEY` | If you're using Anthropic |
 | `OPENAI_API_KEY` | If you're using OpenAI |
 | `COPILOT_GITHUB_TOKEN` | If you're using Copilot: a fine-grained PAT with the **Copilot Requests** permission ([providers](providers.md#github-copilot)) |
@@ -32,7 +42,8 @@ lives.
 ## 4. Add the config
 
 Copy [`templates/zeroheight-audit.config.json`](../templates/zeroheight-audit.config.json)
-to the repo root and set `styleguideName`, `tokenSetId` and the `include` globs
+to the repo root and set `styleguideId` (or `styleguideName`), `tokenSetId` and
+the `include` globs
 ([configuration](configuration.md)).
 
 ## 5. Merge, then open a pull request
@@ -48,11 +59,12 @@ tool call (`zeroheight: get-page`, and so on) and the finding counts.
 
 ## Options
 
-Inputs for `zeroheight-demos/zeroheight-pr-audit@v1`:
+Inputs for `zeroheight-demos/zeroheight-pr-audit@v2`:
 
 | Input | Default | |
 |---|---|---|
-| `zeroheight-mcp-url` | (required) | The remote MCP link |
+| `zeroheight-client-id` | (required) | The zeroheight API token's Client ID |
+| `zeroheight-access-token` | (required) | The zeroheight API token's Access Token |
 | `provider` | `anthropic` | `anthropic`, `openai` or `copilot` |
 | `model` | provider default | Any model ID the provider accepts |
 | `anthropic-api-key` / `openai-api-key` / `copilot-token` | | The key for your provider |

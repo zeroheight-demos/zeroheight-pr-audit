@@ -1,7 +1,10 @@
 import { existsSync, readFileSync } from "node:fs";
 
 export const DEFAULT_CONFIG = {
+	// Which styleguide to audit against. The ID is safest; a unique name works too.
+	styleguideId: null,
 	styleguideName: "",
+	// The token set to match values against (from zeroheight's Tokens section).
 	tokenSetId: null,
 	include: ["src/**/*.{tsx,ts,jsx,js,vue,svelte,css,scss,less}"],
 	exclude: ["**/*.test.*", "**/*.spec.*", "**/*.stories.*", "**/__snapshots__/**"],

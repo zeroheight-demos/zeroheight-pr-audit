@@ -9,7 +9,7 @@ can switch by changing one setting.
 | Setting | `anthropic` (default) | `openai` | `copilot` |
 | Secret | `ANTHROPIC_API_KEY` | `OPENAI_API_KEY` | `COPILOT_GITHUB_TOKEN` |
 | Default model | `claude-sonnet-5-5` | `gpt-6.1-sol` | The Copilot CLI's default |
-| Who calls zeroheight | Anthropic's API (MCP connector) | OpenAI's API (remote MCP tool) | The Copilot CLI on your runner |
+| Who calls zeroheight | The action, on your runner | The action, on your runner | The action's local MCP server, on your runner |
 | Billing | API usage | API usage | Copilot premium requests |
 | Pages-read count in the summary | Yes | Yes | No |
 
@@ -23,12 +23,12 @@ guidelines). Smaller ones are fine for token checks.
    A workspace just for CI keys makes spend easy to track and cap.
 2. Store it as `ANTHROPIC_API_KEY`.
 
-The audit uses the Messages API with the
-[MCP connector](https://platform.claude.com/docs/en/agents-and-tools/mcp-connector)
-(beta header `mcp-client-2025-11-20`). Anthropic's servers connect to your
-zeroheight link directly, and only the read tools listed in
-[`src/prompt.mjs`](../src/prompt.mjs) are turned on. The MCP connector isn't
-eligible for zero data retention.
+The audit uses the Messages API with
+[client-side tools](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview).
+When Claude asks for a page or a token lookup, the action makes that call to
+zeroheight itself and sends the result back, so your zeroheight credentials
+never go to Anthropic. The system prompt, tools and diff are cached between
+turns to keep the cost down.
 
 If you route through a gateway, set `ANTHROPIC_BASE_URL`.
 
@@ -38,10 +38,10 @@ If you route through a gateway, set `ANTHROPIC_BASE_URL`.
    A project just for CI keeps spend separate.
 2. Store it as `OPENAI_API_KEY`.
 
-The audit uses the Responses API with a
-[remote MCP tool](https://developers.openai.com/api/docs/guides/tools-connectors-mcp),
-`require_approval: "never"` and `allowed_tools` limited to the read tools.
-OpenAI's servers connect to your zeroheight link directly.
+The audit uses the Responses API with
+[function tools](https://developers.openai.com/api/docs/guides/function-calling).
+The action runs each zeroheight call itself and sends the result back, so your
+zeroheight credentials never go to OpenAI.
 
 For Azure OpenAI or a gateway, set `OPENAI_BASE_URL` to the base that serves
 `/responses`.
@@ -59,11 +59,12 @@ manage another API key. It works from GitHub, GitLab and Bitbucket alike.
 
 The audit runs the [Copilot CLI](https://docs.github.com/en/copilot/reference/cli-command-reference)
 in prompt mode (`npx @github/copilot@1.0.105` unless `copilot` is already on
-the runner; set `ZH_AUDIT_COPILOT_VERSION` to change it). The CLI connects to
-zeroheight from your runner, with:
+the runner; set `ZH_AUDIT_COPILOT_VERSION` to change it), with:
 
-- the zeroheight link passed as session-only MCP config, kept outside the
-  checkout
+- one MCP server: the action's own local server
+  ([`src/stdio-server.mjs`](../src/stdio-server.mjs)), which serves the same four
+  read-only zeroheight tools as the other providers and holds the zeroheight
+  credentials itself
 - the built-in GitHub MCP server turned off
 - shell, write, URL and memory tools denied, so it can only read the input file
   and call zeroheight
@@ -75,6 +76,7 @@ with the CLI's message in the log.
 
 ## Self-hosted and other models
 
-Anything that speaks the Anthropic Messages API or the OpenAI Responses API,
-including remote MCP tools, can be used through `ANTHROPIC_BASE_URL` or
-`OPENAI_BASE_URL`. The model has to be able to reach `mcp.zeroheight.com`.
+Anything that speaks the Anthropic Messages API or the OpenAI Responses API
+with tool calling can be used through `ANTHROPIC_BASE_URL` or
+`OPENAI_BASE_URL`. Only the runner needs to reach zeroheight
+(`mcp.zeroheight.com` and `zeroheight.com`); the model never does.

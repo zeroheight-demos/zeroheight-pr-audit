@@ -1,10 +1,13 @@
 // GitHub Copilot through the Copilot CLI in prompt mode. The CLI is the MCP
-// client here, so the zeroheight server is passed as session-only config.
+// client here. Its only MCP server is the audit's own local stdio server
+// (src/stdio-server.mjs), which serves the same read-only zeroheight tools as
+// the other providers and keeps the zeroheight credentials to itself.
 // https://docs.github.com/en/copilot/reference/cli-command-reference
 import { spawn, spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { repairPrompt } from "./anthropic.mjs";
 
 export const DEFAULT_MODEL = null; // The CLI's own default unless ZH_AUDIT_MODEL is set.
@@ -25,7 +28,7 @@ function command() {
 // The agent gets the Copilot token and nothing else that could write anywhere.
 function childEnv(token) {
 	const env = { ...process.env, COPILOT_GITHUB_TOKEN: token };
-	for (const k of ["GITHUB_TOKEN", "GH_TOKEN", "GITLAB_TOKEN", "BITBUCKET_TOKEN", "ZH_AUDIT_PLATFORM_TOKEN", "COPILOT_ALLOW_ALL", "ANTHROPIC_API_KEY", "OPENAI_API_KEY"]) {
+	for (const k of ["GITHUB_TOKEN", "GH_TOKEN", "GITLAB_TOKEN", "BITBUCKET_TOKEN", "ZH_AUDIT_PLATFORM_TOKEN", "COPILOT_ALLOW_ALL", "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "ZEROHEIGHT_CLIENT_ID", "ZEROHEIGHT_ACCESS_TOKEN"]) {
 		delete env[k];
 	}
 	return env;
@@ -50,12 +53,27 @@ function runCli(args, token, log) {
 	});
 }
 
-export async function run({ system, user, mcpUrl, model, apiKey, log }) {
+const SERVER = fileURLToPath(new URL("../stdio-server.mjs", import.meta.url));
+
+export async function run({ system, user, model, apiKey, log, zh, env = process.env }) {
 	if (!apiKey) throw new Error("COPILOT_GITHUB_TOKEN isn't set. It needs a fine-grained PAT with the Copilot Requests permission.");
 	const dir = mkdtempSync(join(tmpdir(), "zh-audit-"));
 	const mcpConfig = join(dir, "mcp.json");
-	// The MCP link is a secret, so its config stays outside the checkout.
-	writeFileSync(mcpConfig, JSON.stringify({ mcpServers: { zeroheight: { type: "http", url: mcpUrl, tools: ["*"] } } }));
+	// The server config carries the zeroheight credentials, so it stays outside
+	// the checkout and is deleted afterwards.
+	const serverEnv = {
+		ZEROHEIGHT_CLIENT_ID: env.ZEROHEIGHT_CLIENT_ID,
+		ZEROHEIGHT_ACCESS_TOKEN: env.ZEROHEIGHT_ACCESS_TOKEN,
+		ZH_AUDIT_STYLEGUIDE_ID: String(zh.styleguide.id),
+		ZH_AUDIT_TOKEN_SET_ID: zh.tokens ? String(zh.tokenSetId || "") : "",
+		ZH_AUDIT_CWD: process.cwd(),
+	};
+	for (const k of ["ZEROHEIGHT_MCP_URL", "ZEROHEIGHT_API_URL"]) if (env[k]) serverEnv[k] = env[k];
+	writeFileSync(
+		mcpConfig,
+		JSON.stringify({ mcpServers: { zeroheight: { type: "local", command: process.execPath, args: [SERVER], env: serverEnv, tools: ["*"] } } }),
+		{ mode: 0o600 },
+	);
 	writeFileSync(INPUT_FILE, `${system}\n\n---\n\n${user}\n`);
 	try {
 		const args = [

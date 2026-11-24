@@ -13,7 +13,9 @@ simpler choice for most teams.
    "Reporting in CI" section telling it to post inline comments with
    `mcp__github_inline_comment__create_inline_comment` and the summary with
    `gh pr comment <number> --body-file zh-audit.md --edit-last --create-if-none`.
-2. Add `ZEROHEIGHT_MCP_URL` and `ANTHROPIC_API_KEY` as repository secrets.
+2. Add `ZEROHEIGHT_CLIENT_ID`, `ZEROHEIGHT_ACCESS_TOKEN` (a zeroheight API
+   token with the `page:read` scope) and `ANTHROPIC_API_KEY` as repository
+   secrets.
 3. Add this workflow:
 
 ```yaml
@@ -49,12 +51,16 @@ jobs:
             Run the design system audit in .claude/skills/zeroheight-pr-audit/SKILL.md
             on this pull request, using the CI reporting steps.
           claude_args: |
-            --mcp-config '{"mcpServers":{"zeroheight":{"type":"http","url":"${{ secrets.ZEROHEIGHT_MCP_URL }}"}}}'
-            --allowedTools "Read,Glob,Grep,Write,Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr comment:*),mcp__github_inline_comment__create_inline_comment,mcp__zeroheight__list-pages,mcp__zeroheight__search-pages,mcp__zeroheight__get-page,mcp__zeroheight__list-token-sets,mcp__zeroheight__list-tokens,mcp__zeroheight__suggest-tokens"
+            --mcp-config '{"mcpServers":{"zeroheight":{"type":"http","url":"https://mcp.zeroheight.com/mcp","headers":{"X-API-CLIENT":"${{ secrets.ZEROHEIGHT_CLIENT_ID }}","X-API-KEY":"${{ secrets.ZEROHEIGHT_ACCESS_TOKEN }}"}}}}'
+            --allowedTools "Read,Glob,Grep,Write,Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr comment:*),mcp__github_inline_comment__create_inline_comment,mcp__zeroheight__list-styleguides,mcp__zeroheight__list-pages,mcp__zeroheight__search-pages,mcp__zeroheight__get-page"
 ```
 
 ## Gotchas we hit
 
+- **No token tools.** Signed in with an API token, the zeroheight MCP offers
+  pages but not its token tools (`list-token-sets`, `suggest-tokens`), so this
+  route can't match values to tokens. The main action gets tokens from the
+  zeroheight API instead, which is one more reason to prefer it.
 - **Pass the MCP config as inline JSON.** When the action adds its own MCP
   servers, it drops a `--mcp-config` given as a file path without saying so.
 - **Claude can only write inside the checkout**, so the summary body has to be
@@ -62,5 +68,6 @@ jobs:
 - **The action loads `.claude/` from the default branch**, not from the pull
   request. Skill changes only take effect once merged.
 - **A green check doesn't prove the audit ran.** Add a step before the action
-  that calls the MCP link with `curl` and fails if it doesn't return a
-  `styleguideName`, or a broken link still passes green.
+  that calls the zeroheight MCP's `list-styleguides` with `curl` and the two
+  headers, and fails if it doesn't return your styleguide. Otherwise a bad
+  token still passes green.

@@ -4,17 +4,32 @@ The job log shows each step: the files it's auditing, the zeroheight check,
 every zeroheight tool the model calls, the finding counts and what was posted.
 Start there.
 
-### "zeroheight didn't respond" or "didn't name a styleguide"
+### "Set ZEROHEIGHT_CLIENT_ID and ZEROHEIGHT_ACCESS_TOKEN"
 
-- **MCP via remote link** is off for the styleguide, or the link was
-  regenerated. Turn it on and update the `ZEROHEIGHT_MCP_URL` secret.
-- The secret holds the main server (`https://mcp.zeroheight.com/mcp`) instead
-  of the styleguide's link. The main server needs a browser login, which a CI
-  runner can't do. zeroheight API keys don't work for the MCP either: they're
-  for the REST API.
-- The secret is empty in this run. On GitHub, check it's a repository or
-  organization secret (not an environment secret) and that the pull request
-  isn't from a fork. On GitLab, check the variable isn't protected.
+The API token isn't reaching the job. On GitHub, check both are repository or
+organization secrets (not environment secrets) and that the pull request isn't
+from a fork. On GitLab, check the variables aren't protected. If the message
+also mentions a remote MCP link, you're on v1 settings: see "Upgrading from
+v1" in the README.
+
+### "zeroheight rejected the API token"
+
+The Client ID or Access Token is wrong, the token was revoked, or it's missing
+the `page:read` scope. Create a new one under your organization's settings →
+**Developers**.
+
+### "This API token can't see styleguide …" or "No styleguide called …"
+
+The token acts as the person who created it, so that person needs access to
+the styleguide. The message lists the styleguides the token can see; copy the
+right ID into `styleguideId`.
+
+### "Tokens: not checked"
+
+The log says why: no `tokenSetId` while the token can see several sets (the
+message lists them), a wrong `tokenSetId`, or a token without the
+`token_set:read` scope. The audit still runs on your pages; it just skips token
+matching and says so in the summary.
 
 ### "No merge base" or "Couldn't find the base"
 
@@ -29,8 +44,8 @@ the globs against the paths in the log.
 ### "The model didn't call any zeroheight tools"
 
 The audit refuses to post a review that isn't grounded in your docs. Usually
-the provider couldn't reach the MCP link (a network policy or proxy), or the
-model ignored the tools. Re-run once. If it keeps happening, try a larger model.
+the model ignored the tools, or every zeroheight call failed (the log shows
+each call and whether it errored). Re-run once. If it keeps happening, try a larger model.
 
 ### Inline comments are missing but the summary is there
 
@@ -59,9 +74,10 @@ always reflects the latest run.
 
 ### Rate limits
 
-The remote MCP link allows about 30 requests per 30 seconds. A normal audit
-uses well under that. Several big pull requests auditing at once can hit it,
-and the provider retries.
+The zeroheight MCP allows about 30 requests per 30 seconds per token. The
+script paces its own calls under that and retries if it's still told to slow
+down, so the worst case is a slower run. Several big pull requests auditing at
+once with the same token share that allowance.
 
 ### The workflow change didn't take effect (GitHub)
 

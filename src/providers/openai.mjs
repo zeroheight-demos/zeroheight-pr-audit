@@ -1,11 +1,12 @@
-// OpenAI Responses API with a remote MCP tool: OpenAI's servers call the
-// zeroheight MCP directly.
-// https://developers.openai.com/api/docs/guides/tools-connectors-mcp
+// OpenAI Responses API with function tools. The model asks for a zeroheight
+// tool, this script runs it (with the zeroheight credentials, which never
+// leave the runner) and sends the result back.
+// https://developers.openai.com/api/docs/guides/function-calling
 import { request } from "../http.mjs";
-import { ZEROHEIGHT_TOOLS } from "../prompt.mjs";
 import { repairPrompt } from "./anthropic.mjs";
 
 export const DEFAULT_MODEL = "gpt-6.1-sol";
+const MAX_TURNS = 40;
 
 const baseUrl = () => (process.env.OPENAI_BASE_URL || "https://api.openai.com/v1").replace(/\/$/, "");
 
@@ -19,40 +20,48 @@ function outputText(data) {
 		.join("");
 }
 
-export async function run({ system, user, mcpUrl, model, apiKey, log }) {
+export async function run({ system, user, model, apiKey, log, zh }) {
 	if (!apiKey) throw new Error("OPENAI_API_KEY isn't set.");
-	const { data } = await request(`${baseUrl()}/responses`, {
-		method: "POST",
-		timeoutMs: 15 * 60 * 1000,
-		headers: { Authorization: `Bearer ${apiKey}` },
-		body: {
-			model: model || DEFAULT_MODEL,
-			instructions: system,
-			input: user,
-			max_output_tokens: 32000,
-			tools: [
-				{
-					type: "mcp",
-					server_label: "zeroheight",
-					server_description: "The team's design system documentation and tokens in zeroheight.",
-					server_url: mcpUrl,
-					require_approval: "never",
-					allowed_tools: ZEROHEIGHT_TOOLS,
-				},
-			],
-		},
-	});
-	if (data.status && data.status !== "completed") {
+	const tools = zh.tools.map((t) => ({ type: "function", name: t.name, description: t.description, parameters: t.input_schema, strict: false }));
+	const toolCalls = [];
+	let previous = null;
+	let input = user;
+	let data;
+
+	for (let turn = 0; turn < MAX_TURNS; turn++) {
+		({ data } = await request(`${baseUrl()}/responses`, {
+			method: "POST",
+			timeoutMs: 10 * 60 * 1000,
+			headers: { Authorization: `Bearer ${apiKey}` },
+			body: {
+				model: model || DEFAULT_MODEL,
+				instructions: system,
+				input,
+				tools,
+				max_output_tokens: 32000,
+				...(previous ? { previous_response_id: previous } : {}),
+			},
+		}));
+		const calls = (data.output || []).filter((item) => item.type === "function_call");
+		if (!calls.length) break;
+		input = [];
+		for (const call of calls) {
+			toolCalls.push(call.name);
+			let args = {};
+			try {
+				args = JSON.parse(call.arguments || "{}");
+			} catch {}
+			const r = await zh.exec(call.name, args);
+			log(`  zeroheight: ${call.name}${r.isError ? " (error)" : ""}`);
+			input.push({ type: "function_call_output", call_id: call.call_id, output: r.isError ? `Error: ${r.text}` : r.text || "(empty)" });
+		}
+		previous = data.id;
+		if (turn === MAX_TURNS - 1) log(`  warning: stopped after ${MAX_TURNS} turns`);
+	}
+	if (data?.status && data.status !== "completed") {
 		log(`  warning: response status ${data.status}${data.incomplete_details ? ` (${JSON.stringify(data.incomplete_details)})` : ""}`);
 	}
-	const toolCalls = [];
-	for (const item of data.output || []) {
-		if (item.type === "mcp_call") {
-			toolCalls.push(item.name);
-			log(`  zeroheight: ${item.name}${item.error ? " (error)" : ""}`);
-		}
-	}
-	return { text: outputText(data), toolCalls };
+	return { text: data ? outputText(data) : "", toolCalls };
 }
 
 export async function repair({ apiKey, model, badText }) {

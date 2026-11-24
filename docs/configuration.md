@@ -5,7 +5,7 @@ without the file the audit runs with the defaults below and says so in the log.
 
 ```json
 {
-  "styleguideName": "Acme Design System",
+  "styleguideId": 137930,
   "tokenSetId": 16490,
   "include": ["src/**/*.{tsx,ts,css}"],
   "exclude": ["**/*.test.*", "**/*.stories.*"],
@@ -17,8 +17,9 @@ without the file the audit runs with the defaults below and says so in the log.
 
 | Field | Default | What it does |
 |---|---|---|
-| `styleguideName` | | The styleguide you expect. The remote MCP link decides which styleguide is used. If the two differ, the log warns you, which usually means the secret points at the wrong link. |
-| `tokenSetId` | | The token set for `suggest-tokens`. Without it, the model looks the set up with `list-token-sets` each run. Find the ID in the token set's URL in zeroheight, or ask an agent connected to the MCP to call `list-token-sets`. |
+| `styleguideId` | | The styleguide to audit against. Find it in the styleguide's URL in zeroheight. If the API token can only see one styleguide you can leave it out. |
+| `styleguideName` | | Instead of `styleguideId`: the styleguide's exact name. It has to be unique among the styleguides the token can see. |
+| `tokenSetId` | | The token set to match values against. Required when the token can see more than one set; without any set, token matching is skipped and the summary says so. Find the ID in the token set's URL in zeroheight. If it's wrong, the job log lists the sets the token can see. |
 | `include` | common UI source files under `src/` | Globs for files to audit. Supports `**`, `*`, `?` and `{a,b}`. |
 | `exclude` | tests, specs, stories, snapshots | Globs to skip, applied after `include`. |
 | `failOn` | `none` | `none` only comments. `must` fails the job when there's a Must fix. `should` fails on Must fix or Should fix. Pair with a required check to block merges. |
@@ -33,7 +34,10 @@ These work on every platform. On GitHub, the action's inputs set them for you.
 
 | Variable | |
 |---|---|
-| `ZEROHEIGHT_MCP_URL` | The remote MCP link (required) |
+| `ZEROHEIGHT_CLIENT_ID` | Client ID of a zeroheight API token with `page:read` and `token_set:read` (required) |
+| `ZEROHEIGHT_ACCESS_TOKEN` | Access Token for the same API token (required) |
+| `ZEROHEIGHT_MCP_URL` | Override the zeroheight MCP address (default `https://mcp.zeroheight.com/mcp`) |
+| `ZEROHEIGHT_API_URL` | Override the zeroheight API address (default `https://zeroheight.com/open_api/v3`) |
 | `ZH_AUDIT_PROVIDER` | `anthropic`, `openai` or `copilot` |
 | `ZH_AUDIT_MODEL` | Model ID |
 | `ZH_AUDIT_CONFIG` | Path to the config file |
